@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'util.dart' as util;
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
@@ -13,22 +14,42 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
 
-
   String cityName = util.defaultName;
-  Future _nextScreen(BuildContext context) async{
+
+
+  Future _nextScreen(BuildContext context) async {
     Map result = await Navigator.of(context).push(
-        new MaterialPageRoute(builder: (BuildContext context){
+        new MaterialPageRoute(builder: (BuildContext context) {
           return new nextScreen();
         }));
-    if(result != null && result.containsKey('enter')){
+    if (result != null && result.containsKey('enter')) {
       cityName = result['enter'].toString();
-    }else{
-      cityName = util.defaultName;
+    } else {
+      cityName = util.defaultName.toString();
     }
   }
 
+
+
+
+  Future _ownWeather(BuildContext context) async {
+    Map result = await Navigator.of(context).push(
+        new MaterialPageRoute(builder: (BuildContext context) {
+          return new Home();
+        }));
+    if (result != null && result.containsKey('enter')) {
+      cityName = result['enter'].toString();
+    } else {
+      cityName = util.defaultName.toString();
+    }
+  }
+
+
+
+
+
   void getStuff() async {
-    Map data = await getWeather(util.apiId, util.defaultName);
+    Map data = await getWeather(util.apiId, util.defaultName.toString());
     print(data.toString());
   }
 
@@ -49,13 +70,21 @@ class _HomeState extends State<Home> {
             new UserAccountsDrawerHeader(accountName: null, accountEmail: null),
             new ListTile(
               title: new Text('Select Country'),
-              onTap: (){
+              onTap: () {
                 Navigator.of(context).pop();
-                _nextScreen(context);},
+                _nextScreen(context);
+              },
             ),
             new Divider(
               color: Colors.black38,
               height: 5.0,
+            ),
+            new ListTile(
+              title: new Text('Show your location weather'),
+              onTap: () {
+                Navigator.of(context).pop();
+                util.getCurrentLocation();
+              },
             )
           ],
         ),
@@ -76,12 +105,14 @@ class _HomeState extends State<Home> {
             child: new Text(
               "$cityName",
               style: textStyle(),
-            ),
+            )
+
           ),
           new Container(
             alignment: Alignment.topLeft,
             padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
-            child: updateTemp('$cityName' == null ? util.defaultName : cityName),
+            child: updateTemp(
+                '$cityName' == null ? util.defaultName : cityName),
           )
         ],
       ),
@@ -90,17 +121,18 @@ class _HomeState extends State<Home> {
 
   Future<Map> getWeather(String apiId, String city) async {
     String apiURL =
-        "http://api.openweathermap.org/data/2.5/weather?q=$city&appid=${util.apiId}&units=metric";
+        "http://api.openweathermap.org/data/2.5/weather?q=$city&appid=${util
+        .apiId}&units=metric";
 
     http.Response response = await http.get(apiURL);
     return json.decode(response.body);
   }
 
-  Widget updateTemp(String city){
+  Widget updateTemp(String city) {
     return new FutureBuilder(
         future: getWeather(util.apiId, city),
-        builder: (BuildContext context, AsyncSnapshot<Map> snapshot){
-          if(snapshot.hasData){
+        builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
+          if (snapshot.hasData) {
             Map content = snapshot.data;
             return new Container(
               child: new Column(
@@ -113,20 +145,20 @@ class _HomeState extends State<Home> {
                 ],
               ),
             );
-          }else{
+          } else {
             return new Container();
           }
         });
   }
 
-
-
-
-
-
-
-
 }
+
+//  _getName() async{
+//  Map _data = await getCity(latitude as String, longitude as String);
+//  String cityName = _data['city'];
+//  return cityName;
+
+
 class nextScreen extends StatelessWidget {
 
   var _cityFeildControler = new TextEditingController();
@@ -186,3 +218,4 @@ TextStyle textStyle() {
 TextStyle tempStyle() {
   return new TextStyle(fontSize: 50.0, color: Colors.white);
 }
+
